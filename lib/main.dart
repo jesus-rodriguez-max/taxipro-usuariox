@@ -23,8 +23,18 @@ Future<void> main() async {
 
   // Inicialización ordenada
   try {
-    developer.log('🟡 Cargando dotenv...', name: 'TaxiPro');
-    await dotenv.load();
+    developer.log('🟡 Cargando dotenv (.env)...', name: 'TaxiPro');
+    await dotenv.load(fileName: '.env');
+  } catch (_) {}
+
+  // Fallback a .env.example si faltan claves
+  try {
+    final hasStripe = (dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '').isNotEmpty;
+    final hasGoogle = (dotenv.env['GOOGLE_API_KEY'] ?? '').isNotEmpty;
+    if (!hasStripe || !hasGoogle) {
+      developer.log('🟡 Cargando dotenv de ejemplo (.env.example)...', name: 'TaxiPro');
+      await dotenv.load(fileName: '.env.example');
+    }
   } catch (_) {}
 
   try {
