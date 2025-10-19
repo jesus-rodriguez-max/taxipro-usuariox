@@ -1,0 +1,6 @@
+# Example local properties for Android (DO NOT COMMIT local.properties)
+# Copy this file to android/local.properties and fill the values.
+# Keep any sdk.dir or flutter.sdk lines that Android Studio or Flutter add automatically.
+
+# Google Maps Android SDK API Key used via manifest placeholder ${MAPS_API_KEY}
+MAPS_API_KEY=YOUR_ANDROID_MAPS_API_KEY

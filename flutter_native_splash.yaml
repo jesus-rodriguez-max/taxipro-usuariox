@@ -1,0 +1,20 @@
+flutter_native_splash:
+  # -- Configuración unificada --
+  color: "#000000"  # Negro absoluto para ambos modos
+  color_dark: "#000000"
+  image: assets/branding/isotipo_tp.png  # Isotipo TP azul
+  image_dark: assets/branding/isotipo_tp.png
+
+  # -- Configuración específica para Android 12+ --
+  android_12:
+    image: assets/branding/isotipo_tp.png
+    icon_background_color: "#000000"
+    image_dark: assets/branding/isotipo_tp.png
+    icon_background_color_dark: "#000000"
+
+  # -- Propiedades generales --
+  android_gravity: center
+  web: false
+  fullscreen: false
+  android: true
+  ios: false

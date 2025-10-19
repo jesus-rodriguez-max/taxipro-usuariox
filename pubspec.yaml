@@ -1,0 +1,52 @@
+name: taxipro_usuariox
+description: "Taxi Pro UsuarioX - App oficial del pasajero."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  flutter_dotenv: ^5.1.0
+  google_sign_in: ^6.2.1
+  flutter_stripe: ^10.1.1
+  cupertino_icons: ^1.0.8
+  http: ^1.2.0
+  google_maps_flutter: ^2.7.0
+  geolocator: ^10.1.0
+  permission_handler: ^11.3.1
+  connectivity_plus: ^6.0.3
+  telephony:
+    path: ../telephony
+  webview_flutter: ^4.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+    - assets/branding/
+    - assets/splash/
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Regular.ttf
+        - asset: assets/fonts/Manrope-Bold.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/isotipo_tp.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/branding/isotipo_tp.png"
+
