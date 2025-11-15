@@ -1,20 +1,20 @@
 {
   "project_info": {
-    "project_number": "901358764373",
-    "project_id": "taxipro-usuariox",
-    "storage_bucket": "taxipro-usuariox.firebasestorage.app"
+    "project_number": "134468439876",
+    "project_id": "taxipro-usuariox-f177b",
+    "storage_bucket": "taxipro-usuariox-f177b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:901358764373:android:ff87a9923ea3bef25dafdc",
+        "mobilesdk_app_id": "1:134468439876:android:2f380a71c85102cc82d111",
         "android_client_info": {
           "package_name": "com.taxipro.usuariox"
         }
       },
       "oauth_client": [
         {
-          "client_id": "901358764373-4svb6kkrq82ug2h0uffpdsq2rdehu3i4.apps.googleusercontent.com",
+          "client_id": "134468439876-u05klq7sj788idadaj66ofgjhnerhb81.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.taxipro.usuariox",
@@ -22,28 +22,21 @@
           }
         },
         {
-          "client_id": "901358764373-rvff0d00jn39ht92lupt7ovme10cfs00.apps.googleusercontent.com",
+          "client_id": "134468439876-fv4c4fd205hg6761lc3vkk555em80kti.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBFbPzY7i5d929mrmzB8tw46BMcmXI-TWM"
+          "current_key": "AIzaSyCeVFSVGIlrQVs3kR3LTgjEWMh28YyZX84"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "901358764373-rvff0d00jn39ht92lupt7ovme10cfs00.apps.googleusercontent.com",
+              "client_id": "134468439876-fv4c4fd205hg6761lc3vkk555em80kti.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "901358764373-cuk4gv6q3fbpvphv32602shqlotdc182.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.taxipro.taxiproUsuariox"
-              }
             }
           ]
         }

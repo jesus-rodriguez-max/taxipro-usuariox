@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:taxipro_usuariox/firebase_options.dart';
 
 void main() {
-  test('Firebase project is configured to taxipro-usuariox', () {
-    expect(DefaultFirebaseOptions.android.projectId, 'taxipro-usuariox');
+  test('Firebase project is configured to taxipro-chofer', () {
+    expect(DefaultFirebaseOptions.android.projectId, 'taxipro-chofer');
   });
 
   test('.env.example contains required keys', () {

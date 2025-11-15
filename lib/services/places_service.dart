@@ -1,6 +1,7 @@
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:taxipro_usuariox/services/functions_service.dart';
+import 'dart:developer' as developer;
 
 class PlaceSuggestion {
   final String placeId;
@@ -15,47 +16,99 @@ class PlaceSuggestion {
 }
 
 class PlacesService {
-  final String? apiKey = dotenv.env['GOOGLE_API_KEY'];
-
-  Future<List<PlaceSuggestion>> getAutocomplete(String input) async {
-    if (apiKey == null) {
-      // En un entorno de producción, esto debería ser manejado por un sistema de logging.
-      // Por ahora, simplemente retornamos una lista vacía para no crashear.
-      return [];
+  Future<LatLng?> geocodeAddress(String address, {LatLng? locationBias, int? radius}) async {
+    try {
+      final Map<String, dynamic> payload = {
+        'address': address,
+        'language': 'es',
+        'region': 'mx',
+      };
+      if (locationBias != null) {
+        payload['location'] = {
+          'lat': locationBias.latitude,
+          'lng': locationBias.longitude,
+        };
+      }
+      if (radius != null) payload['radius'] = radius;
+      developer.log('geocodeAddress payload: $payload', name: 'PlacesService');
+      final resp = await CloudFunctionsService.instance.callPublic(
+        'geocodeAddressCallable',
+        payload,
+      );
+      developer.log('geocodeAddress resp.ok=${resp['ok']} keys=${resp.keys.toList()}', name: 'PlacesService');
+      if (resp['ok'] != true || resp['location'] == null) return null;
+      final locRaw = resp['location'];
+      if (locRaw is! Map) return null;
+      final loc = locRaw.map((k, v) => MapEntry(k.toString(), v));
+      return LatLng((loc['lat'] as num).toDouble(), (loc['lng'] as num).toDouble());
+    } on FirebaseFunctionsException {
+      rethrow;
+    } catch (e) {
+      developer.log('geocodeAddress error: $e', name: 'PlacesService');
+      rethrow;
     }
+  }
 
-    if (input.isEmpty) {
-      return [];
+  Future<LatLng?> geocodePlaceId(String placeId) async {
+    try {
+      developer.log('geocodePlaceId placeId=$placeId', name: 'PlacesService');
+      final resp = await CloudFunctionsService.instance.callPublic(
+        'geocodeAddressCallable',
+        {'placeId': placeId, 'language': 'es'},
+      );
+      developer.log('geocodePlaceId resp.ok=${resp['ok']} keys=${resp.keys.toList()}', name: 'PlacesService');
+      if (resp['ok'] != true || resp['location'] == null) return null;
+      final locRaw = resp['location'];
+      if (locRaw is! Map) return null;
+      final loc = locRaw.map((k, v) => MapEntry(k.toString(), v));
+      return LatLng((loc['lat'] as num).toDouble(), (loc['lng'] as num).toDouble());
+    } on FirebaseFunctionsException {
+      rethrow;
+    } catch (e) {
+      developer.log('geocodePlaceId error: $e', name: 'PlacesService');
+      return null;
     }
-
+  }
+  Future<List<PlaceSuggestion>> getAutocomplete(String input, {LatLng? locationBias, int? radius}) async {
+    if (input.isEmpty) return [];
     final String sessionToken = DateTime.now().millisecondsSinceEpoch.toString();
-    final Uri uri = Uri.https(
-      'maps.googleapis.com',
-      '/maps/api/place/autocomplete/json',
-      {
+    try {
+      final Map<String, dynamic> payload = {
         'input': input,
-        'key': apiKey,
         'sessiontoken': sessionToken,
         'language': 'es',
-        'components': 'country:mx', // Limitar a México
-      },
-    );
-
-    try {
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['status'] == 'OK') {
-          final List<dynamic> predictions = data['predictions'];
-          return predictions
-              .map((p) => PlaceSuggestion(p['place_id'], p['description']))
-              .toList();
+        'components': 'country:mx',
+      };
+      if (locationBias != null) {
+        payload['location'] = {
+          'lat': locationBias.latitude,
+          'lng': locationBias.longitude,
+        };
+      }
+      if (radius != null) payload['radius'] = radius;
+      developer.log('autocomplete payload: $payload', name: 'PlacesService');
+      final resp = await CloudFunctionsService.instance.callPublic(
+        'placesAutocompleteCallable',
+        payload,
+      );
+      developer.log('autocomplete resp.status=${resp['ok']} count=${(resp['suggestions'] as List?)?.length ?? 0}', name: 'PlacesService');
+      if (resp['ok'] != true) return [];
+      final list = (resp['suggestions'] as List?) ?? [];
+      final out = <PlaceSuggestion>[];
+      for (final item in list) {
+        if (item is Map<String, dynamic>) {
+          final id = item['placeId'] as String?;
+          final desc = item['description'] as String?;
+          if (id != null && desc != null) out.add(PlaceSuggestion(id, desc));
+        } else if (item is Map) {
+          final m = item.map((k, v) => MapEntry(k.toString(), v));
+          final id = m['placeId'] as String?;
+          final desc = m['description'] as String?;
+          if (id != null && desc != null) out.add(PlaceSuggestion(id, desc));
         }
       }
-      return [];
-    } catch (e) {
-      // En un entorno de producción, registrar el error con un servicio de logging.
+      return out;
+    } catch (_) {
       return [];
     }
   }

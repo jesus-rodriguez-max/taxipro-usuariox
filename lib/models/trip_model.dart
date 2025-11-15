@@ -4,7 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
   class Trip {
   // Factory constructor to create a Trip object from a Firestore document
   factory Trip.fromFirestore(DocumentSnapshot doc) {
-    final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final raw = doc.data();
+    final Map<String, dynamic> data = raw is Map<String, dynamic>
+        ? raw
+        : (raw is Map
+            ? raw.map((k, v) => MapEntry(k.toString(), v))
+            : <String, dynamic>{});
 
     // Backward compatibility: flat vs nested origin/destination
     String originAddress = data['originAddress'] ?? '';
@@ -14,22 +19,53 @@ import 'package:cloud_firestore/cloud_firestore.dart';
     double? destinationLat;
     double? destinationLng;
 
-    if (data['origin'] is Map<String, dynamic>) {
-      final o = data['origin'] as Map<String, dynamic>;
-      originAddress = o['address'] ?? originAddress;
-      originLat = (o['lat'] as num?)?.toDouble();
-      originLng = (o['lng'] as num?)?.toDouble();
+    // Parse origin
+    if (data['origin'] is Map) {
+      final oRaw = data['origin'] as Map;
+      final o = oRaw.map((k, v) => MapEntry(k.toString(), v));
+      originAddress = (o['address'] as String?) ?? originAddress;
+      final p = (o['point'] is Map)
+          ? (o['point'] as Map).map((k, v) => MapEntry(k.toString(), v))
+          : null;
+      originLat = (p != null ? (p['lat'] as num?)?.toDouble() : null) ??
+          (o['lat'] as num?)?.toDouble() ??
+          (o['latitude'] as num?)?.toDouble();
+      originLng = (p != null ? (p['lng'] as num?)?.toDouble() : null) ??
+          (o['lng'] as num?)?.toDouble() ??
+          (o['longitude'] as num?)?.toDouble();
     }
-    if (data['destination'] is Map<String, dynamic>) {
-      final d = data['destination'] as Map<String, dynamic>;
-      destinationAddress = d['address'] ?? destinationAddress;
-      destinationLat = (d['lat'] as num?)?.toDouble();
-      destinationLng = (d['lng'] as num?)?.toDouble();
+
+    // Parse destination
+    if (data['destination'] is Map) {
+      final dRaw = data['destination'] as Map;
+      final d = dRaw.map((k, v) => MapEntry(k.toString(), v));
+      destinationAddress = (d['address'] as String?) ?? destinationAddress;
+      final p2 = (d['point'] is Map)
+          ? (d['point'] as Map).map((k, v) => MapEntry(k.toString(), v))
+          : null;
+      destinationLat = (p2 != null ? (p2['lat'] as num?)?.toDouble() : null) ??
+          (d['lat'] as num?)?.toDouble() ??
+          (d['latitude'] as num?)?.toDouble();
+      destinationLng = (p2 != null ? (p2['lng'] as num?)?.toDouble() : null) ??
+          (d['lng'] as num?)?.toDouble() ??
+          (d['longitude'] as num?)?.toDouble();
+    }
+
+    // Parse fare (object or number)
+    double? fareAmount;
+    final fareRaw = data['fare'];
+    if (fareRaw is num) {
+      fareAmount = fareRaw.toDouble();
+    } else if (fareRaw is Map) {
+      final f = fareRaw.map((k, v) => MapEntry(k.toString(), v));
+      fareAmount = (f['total'] as num?)?.toDouble() ?? (f['amount'] as num?)?.toDouble();
+    } else {
+      fareAmount = (data['estimatedFare'] as num?)?.toDouble();
     }
 
     return Trip(
       id: doc.id,
-      userId: data['userId'] ?? '',
+      userId: data['passengerId'] ?? data['userId'] ?? '',
       driverId: data['driverId'],
       originAddress: originAddress,
       originLat: originLat,
@@ -41,7 +77,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
       status: data['status'] ?? 'unknown',
       // Safely create Driver object if driver data exists
       driver: data['driver'] != null ? Driver.fromMap(data['driver']) : null,
-      fare: (data['fare'] as num?)?.toDouble(),
+      fare: fareAmount,
       currentLocation: data['currentLocation'] as GeoPoint?,
       paymentMethod: data['paymentMethod'] ?? 'cash', // Valor por defecto
       paymentStatus: data['paymentStatus'] ?? 'pending', // Valor por defecto

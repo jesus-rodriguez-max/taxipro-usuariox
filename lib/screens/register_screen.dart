@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,7 +13,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -25,6 +26,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _confirmPasswordVisible = false;
   bool _isLoading = false;
   bool _acceptTerms = false;
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
 
   @override
   void initState() {
@@ -36,6 +39,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Idealmente, usar un logger en lugar de print.
       _firebaseInitialized = false;
     }
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _controller.forward();
   }
   
   @override
@@ -44,6 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmPasswordCtrl.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -147,240 +154,316 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('Registro'),
+        backgroundColor: const Color(0xFF4A90E2),
+        foregroundColor: Colors.white,
+        centerTitle: true,
+        title: const Text('Registro', style: TextStyle(color: Colors.white)),
         elevation: 0,
       ),
       body: SafeArea(
+        top: false,
         child: Stack(
           children: [
-            Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                children: [
-                  const SizedBox(height: 24),
-                  
-                  // Logo completo TP + TAXI PRO
-                  Center(child: Image.asset('assets/branding/logo_complete.png', height: 120)),
-                  const SizedBox(height: 24),
-                  
-                  // Título
-                  const Text('Crear cuenta',
-                      textAlign: TextAlign.left,
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 24),
-                  
-                  // Nombre completo
-                  TextFormField(
-                    controller: _nameCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Nombre completo',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: const Icon(Icons.person),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa tu nombre';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Correo electrónico
-                  TextFormField(
-                    controller: _emailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Correo electrónico',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: const Icon(Icons.email),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa tu correo';
-                      }
-                      if (!value.contains('@') || !value.contains('.')) {
-                        return 'Ingresa un correo válido';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Contraseña
-                  TextFormField(
-                    controller: _passwordCtrl,
-                    obscureText: !_passwordVisible,
-                    decoration: InputDecoration(
-                      labelText: 'Contraseña',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _passwordVisible ? Icons.visibility : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _passwordVisible = !_passwordVisible;
-                          });
-                        },
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 0),
+                    FadeTransition(
+                      opacity: _fade,
+                      child: Image.asset(
+                        'assets/branding/logo_complete.png',
+                        height: 240,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa una contraseña';
-                      }
-                      if (value.length < 8) {
-                        return 'Debe tener al menos 8 caracteres';
-                      }
-                      if (!value.contains(RegExp(r'[A-Z]'))) {
-                        return 'Debe contener al menos una mayúscula';
-                      }
-                      if (!value.contains(RegExp(r'[a-z]'))) {
-                        return 'Debe contener al menos una minúscula';
-                      }
-                      if (!value.contains(RegExp(r'[0-9]'))) {
-                        return 'Debe contener al menos un número';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Confirmar contraseña
-                  TextFormField(
-                    controller: _confirmPasswordCtrl,
-                    obscureText: !_confirmPasswordVisible,
-                    decoration: InputDecoration(
-                      labelText: 'Confirmar contraseña',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(_confirmPasswordVisible ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () {
-                          setState(() {
-                            _confirmPasswordVisible = !_confirmPasswordVisible;
-                          });
-                        },
-                      ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Crear cuenta',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black87),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor confirma tu contraseña';
-                      }
-                      if (value != _passwordCtrl.text) {
-                        return 'Las contraseñas no coinciden';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Términos y condiciones
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _acceptTerms,
-                        onChanged: (value) {
-                          setState(() {
-                            _acceptTerms = value ?? false;
-                          });
-                        },
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _acceptTerms = !_acceptTerms;
-                            });
-                          },
-                          child: RichText(
-                            text: TextSpan(
-                              text: 'Acepto los ',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          // Nombre completo
+                          TextFormField(
+                            controller: _nameCtrl,
+                            decoration: InputDecoration(
+                              labelText: 'Nombre completo',
+                              prefixIcon: const Icon(Icons.person, color: Colors.black),
+                              filled: true,
+                              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1565C0), width: 1.4)),
+                              labelStyle: const TextStyle(fontFamily: 'Manrope', fontSize: 16),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingresa tu nombre';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          
+                          // Correo electrónico
+                          TextFormField(
+                            controller: _emailCtrl,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              labelText: 'Correo electrónico',
+                              prefixIcon: const Icon(Icons.email, color: Colors.black),
+                              filled: true,
+                              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1565C0), width: 1.4)),
+                              labelStyle: const TextStyle(fontFamily: 'Manrope', fontSize: 16),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingresa tu correo';
+                              }
+                              if (!value.contains('@') || !value.contains('.')) {
+                                return 'Ingresa un correo válido';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Contraseña
+                          TextFormField(
+                            controller: _passwordCtrl,
+                            obscureText: !_passwordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Contraseña',
+                              prefixIcon: const Icon(Icons.lock_outline, color: Colors.black),
+                              filled: true,
+                              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1565C0), width: 1.4)),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _passwordVisible = !_passwordVisible;
+                                  });
+                                },
+                              ),
+                              labelStyle: const TextStyle(fontFamily: 'Manrope', fontSize: 16),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingresa una contraseña';
+                              }
+                              if (value.length < 8) {
+                                return 'Debe tener al menos 8 caracteres';
+                              }
+                              if (!value.contains(RegExp(r'[A-Z]'))) {
+                                return 'Debe contener al menos una mayúscula';
+                              }
+                              if (!value.contains(RegExp(r'[a-z]'))) {
+                                return 'Debe contener al menos una minúscula';
+                              }
+                              if (!value.contains(RegExp(r'[0-9]'))) {
+                                return 'Debe contener al menos un número';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Confirmar contraseña
+                          TextFormField(
+                            controller: _confirmPasswordCtrl,
+                            obscureText: !_confirmPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Confirmar contraseña',
+                              prefixIcon: const Icon(Icons.lock_outline, color: Colors.black),
+                              filled: true,
+                              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1565C0), width: 1.4)),
+                              suffixIcon: IconButton(
+                                icon: Icon(_confirmPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                                onPressed: () {
+                                  setState(() {
+                                    _confirmPasswordVisible = !_confirmPasswordVisible;
+                                  });
+                                },
+                              ),
+                              labelStyle: const TextStyle(fontFamily: 'Manrope', fontSize: 16),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor confirma tu contraseña';
+                              }
+                              if (value != _passwordCtrl.text) {
+                                return 'Las contraseñas no coinciden';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Términos y condiciones
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Checkbox(
+                                value: _acceptTerms,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _acceptTerms = value ?? false;
+                                  });
+                                },
+                                activeColor: const Color(0xFF4A90E2),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _acceptTerms = !_acceptTerms;
+                                  });
+                                },
+                                child: RichText(
+                                  text: TextSpan(
+                                    text: 'Acepto los ',
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    children: [
+                                      TextSpan(
+                                        text: 'términos y condiciones',
+                                        style: const TextStyle(
+                                          color: Color(0xFF1E5ACB),
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                        recognizer: (TapGestureRecognizer()
+                                          ..onTap = () async {
+                                            final accepted = await Navigator.push<bool>(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => TermsAndConditionsScreen(
+                                                  onAccepted: () => Navigator.pop(context, true),
+                                                ),
+                                              ),
+                                            );
+                                            if (accepted == true) {
+                                              if (mounted) setState(() => _acceptTerms = true);
+                                            }
+                                          }),
+                                      ),
+                                      const TextSpan(
+                                        text: ' y la ',
+                                      ),
+                                      TextSpan(
+                                        text: 'política de privacidad',
+                                        style: const TextStyle(
+                                          color: Color(0xFF1E5ACB),
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                        recognizer: (TapGestureRecognizer()
+                                          ..onTap = () async {
+                                            final accepted = await Navigator.push<bool>(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => PrivacyPolicyScreen(
+                                                  onAccepted: () => Navigator.pop(context, true),
+                                                ),
+                                              ),
+                                            );
+                                            if (accepted == true) {
+                                              if (mounted) setState(() => _acceptTerms = true);
+                                            }
+                                          }),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Botón de registro
+                          SizedBox(
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: (!_acceptTerms || _isLoading) ? null : _registerUser,
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                backgroundColor: const Color(0xFF4A90E2),
+                                foregroundColor: Colors.white,
+                                elevation: 2,
+                              ),
+                              child: const Text(
+                                'REGISTRARME',
+                                style: TextStyle(
+                                  fontFamily: 'Manrope',
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  letterSpacing: 0.5,
+                                )
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Enlace a login
+                          Center(
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                TextSpan(
-                                  text: 'términos y condiciones',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    decoration: TextDecoration.underline,
+                                const Text('¿Ya tienes cuenta? ', style: TextStyle(fontFamily: 'Manrope', fontSize: 14, color: Color(0xFF606060))),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushReplacementNamed(context, '/login');
+                                  },
+                                  child: const Text(
+                                    'Inicia sesión aquí',
+                                    style: TextStyle(
+                                      fontFamily: 'Manrope',
+                                      fontSize: 14,
+                                      color: Color(0xFF1E5ACB),
+                                      decoration: TextDecoration.underline,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                  recognizer: (TapGestureRecognizer()
-                                    ..onTap = () async {
-                                      final accepted = await Navigator.push<bool>(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => TermsAndConditionsScreen(
-                                            onAccepted: () => Navigator.pop(context, true),
-                                          ),
-                                        ),
-                                      );
-                                      if (accepted == true) {
-                                        if (mounted) setState(() => _acceptTerms = true);
-                                      }
-                                    }),
-                                ),
-                                const TextSpan(
-                                  text: ' y la ',
-                                ),
-                                TextSpan(
-                                  text: 'política de privacidad',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                  recognizer: (TapGestureRecognizer()
-                                    ..onTap = () async {
-                                      final accepted = await Navigator.push<bool>(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => PrivacyPolicyScreen(
-                                            onAccepted: () => Navigator.pop(context, true),
-                                          ),
-                                        ),
-                                      );
-                                      if (accepted == true) {
-                                        if (mounted) setState(() => _acceptTerms = true);
-                                      }
-                                    }),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
 
-                  // Botón de registro
-                  SizedBox(
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: (!_acceptTerms || _isLoading) ? null : _registerUser,
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        backgroundColor: Theme.of(context).primaryColor,
-                      ),
-                      child: const Text(
-                        'Registrarme',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          fontSize: 16
-                        )
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
+                  ],
+                ),
               ),
             ),
-            
             // Indicador de carga
             if (_isLoading)
               Container(

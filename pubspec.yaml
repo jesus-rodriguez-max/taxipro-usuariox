@@ -9,33 +9,63 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^3.6.0
-  firebase_auth: ^5.3.1
-  cloud_firestore: ^5.4.4
   flutter_dotenv: ^5.1.0
-  google_sign_in: ^6.2.1
-  flutter_stripe: ^10.1.1
+  flutter_svg: ^2.0.9
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.19.6
+  cloud_firestore: ^4.17.4
+  cloud_functions: ^4.6.1
+  google_sign_in: ^6.3.0
+  flutter_stripe: ^12.0.2
   cupertino_icons: ^1.0.8
-  http: ^1.2.0
+  http: ^1.2.1
   google_maps_flutter: ^2.7.0
+  google_maps_flutter_android: ^2.18.4
   geolocator: ^10.1.0
   permission_handler: ^11.3.1
+  url_launcher: ^6.3.0
   connectivity_plus: ^6.0.3
-  telephony: ^0.2.0
+  flutter_phone_direct_caller: ^2.1.1
+  telephony:
+    path: ../telephony
   webview_flutter: ^4.7.0
+  webview_flutter_android: ^3.16.0
+  webview_flutter_wkwebview: ^3.12.0
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.1
 
 flutter:
   uses-material-design: true
   assets:
-    - .env.example
+    - .env
     - assets/branding/
-    - assets/splash/
+    - assets/buttons/
+    - assets/fonts/
+    - assets/illustrations/
+    - assets/legal/
+    - assets/icon/google_logo.svg
+    - assets/icon/taxipro_icons_pack_v1/light/configuracion/
+    - assets/icon/taxipro_icons_pack_v1/light/legal/
+    - assets/icon/taxipro_icons_pack_v1/light/pagos/
+    - assets/icon/taxipro_icons_pack_v1/light/security/
+    - assets/icon/taxipro_icons_pack_v1/light/soporte/
+    - assets/icon/taxipro_icons_pack_v1/light/viajes/
+    - assets/icon/taxipro_icons_pack_v1/dark/configuracion/
+    - assets/icon/taxipro_icons_pack_v1/dark/legal/
+    - assets/icon/taxipro_icons_pack_v1/dark/pagos/
+    - assets/icon/taxipro_icons_pack_v1/dark/security/
+    - assets/icon/taxipro_icons_pack_v1/dark/soporte/
+    - assets/icon/taxipro_icons_pack_v1/dark/viajes/
+    - assets/icon/taxipro_missing_icons_v2/missing_icons/light/
+    - assets/icon/taxipro_missing_icons_v2/missing_icons/dark/
+    - assets/faq/
+    - .env
   fonts:
     - family: Manrope
       fonts:
@@ -44,8 +74,34 @@ flutter:
 
 flutter_launcher_icons:
   android: true
-  ios: true
-  image_path: "assets/branding/isotipo_tp.png"
+  ios: false
+  image_path: "assets/icon/icon_tp.png"
+  adaptive_icon_foreground: "assets/icon/icon_tp.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/branding/isotipo_tp.png"
+  min_sdk_android: 21
+  web:
+    generate: false
+  windows:
+    generate: false
+  macos:
+    generate: false
+  linux:
+    generate: false
 
+# Native splash configuration
+flutter_native_splash:
+  color: "#FFFFFF"  # Fondo blanco
+  color_dark: "#FFFFFF"
+  image: assets/branding/isotipo_tp.png
+  android_12:
+    image: assets/branding/isotipo_tp.png
+    icon_background_color: "#FFFFFF"
+    color: "#FFFFFF"
+    color_dark: "#FFFFFF"
+    image_dark: assets/branding/isotipo_tp.png
+  ios: true
+  ios_content_mode: scaleAspectFit
+  android: true
+  windows: false
+  macos: false
+  linux: false

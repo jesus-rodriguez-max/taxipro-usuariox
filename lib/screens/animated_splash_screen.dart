@@ -1,44 +1,50 @@
 import 'dart:async';
-    import 'package:flutter/material.dart';
-    import 'package:taxipro_usuariox/auth/auth_wrapper.dart';
-    
-    
-    class AnimatedSplashScreen extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:taxipro_usuariox/theme.dart';
+import 'package:flutter/services.dart' show rootBundle;
+
+class AnimatedSplashScreen extends StatefulWidget {
   const AnimatedSplashScreen({super.key});
 
   @override
   State<AnimatedSplashScreen> createState() => _AnimatedSplashScreenState();
 }
-class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
-    with SingleTickerProviderStateMixin {
+
+class _AnimatedSplashScreenState extends State<AnimatedSplashScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<double> _scale;
-  late final Animation<double> _fade;
+  late final Animation<double> _fadeAnimation;
+  bool _showGif = true;
+  String _gifPath = 'assets/splash/animated_splash_screen.gif';
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     );
-    _scale = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
-    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    
     _controller.forward();
 
-    // Navegar a la app tras breve espera
-    Timer(const Duration(milliseconds: 2800), _navigateToHome);
-  }
-
-  void _navigateToHome() {
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const AuthWrapper()),
-    );
+    // Usar el GIF oficial exactamente como está declarado
+    
+    // Mostrar el GIF por 1.6 segundos
+    _timer = Timer(const Duration(milliseconds: 1600), () {
+      if (mounted) {
+        setState(() => _showGif = false);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -46,47 +52,37 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: Center(
-        child: FadeTransition(
-          opacity: _fade,
-          child: ScaleTransition(
-            scale: _scale,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                _SplashIsotype(),
-                SizedBox(height: 16),
-                Text(
-                  'TAXI PRO',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 28,
-                    letterSpacing: 6,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          child: _showGif
+              ? FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Image.asset(
+                    _gifPath,
+                    key: const ValueKey('gif'),
+                    width: 300,
+                    height: 300,
+                    fit: BoxFit.contain,
+                    gaplessPlayback: true,
+                  ),
+                )
+              : FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Image.asset(
+                    'assets/branding/isotipo_tp.png',
+                    key: const ValueKey('static'),
+                    width: 200,
+                    height: 200,
+                    fit: BoxFit.contain,
                   ),
                 ),
-              ],
-            ),
-          ),
         ),
       ),
-    );
-  }
-}
-
-class _SplashIsotype extends StatelessWidget {
-  const _SplashIsotype();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      height: 160,
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
-      child: Image.asset('assets/branding/isotipo_tp.png', fit: BoxFit.contain),
     );
   }
 }

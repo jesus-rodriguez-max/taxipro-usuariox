@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
   import 'dart:math' as math;
   import 'package:firebase_auth/firebase_auth.dart';
   import 'package:google_sign_in/google_sign_in.dart';
+  import 'package:cloud_firestore/cloud_firestore.dart';
   import 'package:taxipro_usuariox/screens/register_screen.dart';
   import 'package:taxipro_usuariox/screens/privacy_policy_screen.dart';
   import 'package:taxipro_usuariox/screens/terms_and_conditions_screen.dart';
@@ -135,11 +136,20 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
-      // AuthWrapper se encargará de la navegación
+      
+      final user = userCredential.user;
+      if (user != null) {
+        await _ensurePassengerProfile(user);
+        
+        // Navegación directa después de login exitoso
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      }
     } on FirebaseAuthException catch (e) {
       final message = e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential'
           ? 'Credenciales incorrectas. Verifique su email y contraseña.'
@@ -158,20 +168,57 @@ class _LoginScreenState extends State<LoginScreen> {
       // Flujo de autenticación para google_sign_in v6.x
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        // usuario canceló
+        // Usuario canceló
+        if (mounted) setState(() => _isLoading = false);
         return;
       }
+      
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
         accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
-      await _auth.signInWithCredential(credential);
-      // AuthWrapper se encargará de la navegación
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error con Google Sign-In: $e')));
+
+      final authResult = await _auth.signInWithCredential(credential);
+      final user = authResult.user;
+      if (user == null) {
+        throw Exception('No se pudo obtener el usuario después de signInWithCredential');
+      }
+
+      // Crear/actualizar perfil en passengers/{uid}
+      await _ensurePassengerProfile(user);
+      
+      // NAVEGACIÓN CORRECTA (NAVEGAR AQUÍ MISMO):
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error en Google SignIn: $e\n$stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al iniciar sesión con Google')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _ensurePassengerProfile(User user) async {
+    final docRef = FirebaseFirestore.instance.collection('passengers').doc(user.uid);
+    final doc = await docRef.get();
+    if (!doc.exists) {
+      await docRef.set({
+        'userId': user.uid,
+        'email': user.email,
+        'name': user.displayName,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      await docRef.update({
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     }
   }
 
@@ -301,6 +348,38 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(color: Colors.grey.shade300, width: 1),
+                      ),
+                      elevation: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: null, // Facebook login no implementado
+                    icon: Container(
+                      height: 24,
+                      width: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'f',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1877F2),
+                          ),
+                        ),
+                      ),
+                    ),
+                    label: const Text('Continuar con Facebook'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: const Color(0xFF1877F2),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 1,
                     ),

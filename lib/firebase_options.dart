@@ -47,32 +47,32 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAVD2HX1sVRoyvIPT-JXM646GGr5PRLwq0',
-    appId: '1:901358764373:android:a196d488b85dc3aa5dafdc',
-    messagingSenderId: '901358764373',
-    projectId: 'taxipro-usuariox',
-    storageBucket: 'taxipro-usuariox.firebasestorage.app',
+    apiKey: 'AIzaSyDVnpGERWs82_o__51-BwK7YiFld9e7tXQ',
+    appId: '1:569260142078:android:d177be5f087345e9fba4af',
+    messagingSenderId: '569260142078',
+    projectId: 'taxipro-chofer',
+    storageBucket: 'taxipro-chofer.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBiY9u0DjS_I-JeDc9AY2HK1MFRozU0JX4',
-    appId: '1:901358764373:ios:d15e9cef6591de4c5dafdc',
-    messagingSenderId: '901358764373',
-    projectId: 'taxipro-usuariox',
-    storageBucket: 'taxipro-usuariox.firebasestorage.app',
-    androidClientId: '901358764373-2km8353ca0ahh9s1rbfq684ui57lc7bb.apps.googleusercontent.com',
-    iosClientId: '901358764373-cuk4gv6q3fbpvphv32602shqlotdc182.apps.googleusercontent.com',
-    iosBundleId: 'com.taxipro.taxiproUsuariox',
+    appId: '1:569260142078:ios:placeholder',
+    messagingSenderId: '569260142078',
+    projectId: 'taxipro-chofer',
+    storageBucket: 'taxipro-chofer.firebasestorage.app',
+    androidClientId: '569260142078-placeholder.apps.googleusercontent.com',
+    iosClientId: '569260142078-placeholder.apps.googleusercontent.com',
+    iosBundleId: 'com.taxipro.usuariox',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyBiY9u0DjS_I-JeDc9AY2HK1MFRozU0JX4',
-    appId: '1:901358764373:ios:d15e9cef6591de4c5dafdc',
-    messagingSenderId: '901358764373',
-    projectId: 'taxipro-usuariox',
-    storageBucket: 'taxipro-usuariox.firebasestorage.app',
-    androidClientId: '901358764373-2km8353ca0ahh9s1rbfq684ui57lc7bb.apps.googleusercontent.com',
-    iosClientId: '901358764373-cuk4gv6q3fbpvphv32602shqlotdc182.apps.googleusercontent.com',
-    iosBundleId: 'com.taxipro.taxiproUsuariox',
+    appId: '1:569260142078:ios:placeholder',
+    messagingSenderId: '569260142078',
+    projectId: 'taxipro-chofer',
+    storageBucket: 'taxipro-chofer.firebasestorage.app',
+    androidClientId: '569260142078-placeholder.apps.googleusercontent.com',
+    iosClientId: '569260142078-placeholder.apps.googleusercontent.com',
+    iosBundleId: 'com.taxipro.usuariox',
   );
 }

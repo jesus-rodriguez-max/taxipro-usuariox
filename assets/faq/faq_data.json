@@ -1,0 +1,15 @@
+{
+  "passengers": [
+    {"q": "¿Cómo solicito un taxi?", "a": "Ingresa origen y destino en la pantalla principal y confirma la solicitud."},
+    {"q": "¿Puedo pagar con tarjeta?", "a": "Sí, en el modo conectado. En modo SMS sin internet, el pago es solo en efectivo."},
+    {"q": "¿Cómo comparto mi viaje?", "a": "Desde Escudo Taxi Pro puedes compartir el viaje con un contacto de confianza."}
+  ],
+  "drivers": [
+    {"q": "¿Cómo recibo viajes?", "a": "Mantén tu app de conductor en línea y acepta solicitudes cercanas."},
+    {"q": "¿Qué pasa si pierdo la conexión?", "a": "La app del chofer intenta reconectar automáticamente para mantener la ruta activa."}
+  ],
+  "general": [
+    {"q": "¿Qué es TaxiPro?", "a": "Una plataforma de movilidad que prioriza la seguridad y confiabilidad."},
+    {"q": "¿Dónde opera?", "a": "Consulta la cobertura en la app. Estamos expandiéndonos continuamente."}
+  ]
+}

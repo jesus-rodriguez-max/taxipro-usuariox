@@ -27,17 +27,18 @@ class _PaymentWebviewScreenState extends State<PaymentWebviewScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (NavigationRequest request) {
-            // Escucha las URLs de redirección de Stripe
-            if (request.url.contains('success')) {
-              // El pago fue exitoso
-              Navigator.of(context).pop('success'); // Devuelve 'success' a la pantalla anterior
-              return NavigationDecision.prevent; // Evita que la redirección continúe
-            } else if (request.url.contains('cancel')) {
-              // El usuario canceló el pago
-              Navigator.of(context).pop('cancel'); // Devuelve 'cancel'
+            final url = request.url.toLowerCase();
+            // Compatibilidad con URLs actuales del backend y genéricas
+            final isSuccess = url.contains('pago-exitoso') || url.contains('success');
+            final isCancel = url.contains('pago-cancelado') || url.contains('cancel');
+            if (isSuccess) {
+              Navigator.of(context).pop('success');
               return NavigationDecision.prevent;
             }
-            // Permite cualquier otra navegación
+            if (isCancel) {
+              Navigator.of(context).pop('cancel');
+              return NavigationDecision.prevent;
+            }
             return NavigationDecision.navigate;
           },
         ),

@@ -35,7 +35,7 @@ class Driver {
       carModel: 'Toyota Corolla',
       licensePlate: 'SLP-43-21',
       rating: 4.9,
-      photoUrl: 'https://firebasestorage.googleapis.com/v0/b/taxipro-usuariox.appspot.com/o/user_photos%2Fconductor_ejemplo.png?alt=media&token=f0b5d9e0-5a3a-4b7c-8f7a-8d9e0b5d9e0f', // URL de una imagen real
+      photoUrl: 'https://firebasestorage.googleapis.com/v0/b/taxipro-chofer.firebasestorage.app/o/user_photos%2Fconductor_ejemplo.png?alt=media',
     );
   }
 }

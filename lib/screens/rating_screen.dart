@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taxipro_usuariox/theme.dart';
 
 class RatingScreen extends StatefulWidget {
   const RatingScreen({super.key});
@@ -55,7 +56,7 @@ class _RatingScreenState extends State<RatingScreen> {
                       onPressed: () => setState(() => _rating = starIndex.toDouble()),
                       icon: Icon(
                         isFilled ? Icons.star : Icons.star_border,
-                        color: const Color(0xFFC0C0C0),
+                        color: AppColors.silver,
                         size: 32,
                       ),
                     );
@@ -78,12 +79,9 @@ class _RatingScreenState extends State<RatingScreen> {
               // Botón para enviar calificación
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Lógica para guardar la calificación y el comentario
-    // TODO: Enviar la calificación y el comentario a Firestore o tu backend.
-
-    // Muestra un mensaje de agradecimiento y cierra la pantalla.
-                  // Regresar a la pantalla principal del mapa
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  // TODO: guardar calificación/comentario si aplica
+                  // Volver a la pantalla anterior (no forzar Home)
+                  Navigator.of(context).pop();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,

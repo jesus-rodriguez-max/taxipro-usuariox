@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:taxipro_usuariox/theme.dart';
   import 'package:taxipro_usuariox/models/trip_model.dart';
   import 'package:flutter/services.dart';
+  import 'package:url_launcher/url_launcher.dart';
+  import 'package:taxipro_usuariox/services/functions_service.dart';
+  import 'package:taxipro_usuariox/services/emergency_service.dart';
 
   class ActiveTripPanel extends StatelessWidget {
     final Trip trip;
@@ -22,11 +26,8 @@ import 'package:flutter/material.dart';
             TextButton(
               child: const Text('ACTIVAR', style: TextStyle(color: Colors.red)),
               onPressed: () {
-                // TODO: Enviar alerta a los servicios de emergencia y contactos de confianza
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Alerta de pánico activada. Se ha notificado a los servicios de emergencia.')),
-                );
+                EmergencyService.activatePanic(context, activeTrip: trip);
               },
             ),
           ],
@@ -36,19 +37,32 @@ import 'package:flutter/material.dart';
   }
 
   // Comparte los detalles del viaje
-  void _shareTripDetails(BuildContext context) {
-    // En el futuro, esta URL apuntará a una página web real con un mapa.
-    final trackingUrl = 'https://track.taxipro.app/trip/${trip.id}';
-    final shareText = 
-      'Sigue mi viaje de Taxipro en tiempo real:\n'
-      '$trackingUrl\n\n'
-      'Conductor: ${trip.driver?.name ?? 'Cargando...'}\n' 
-      'Vehículo: ${trip.driver?.carModel ?? ''} - ${trip.driver?.licensePlate ?? ''}';
-    Clipboard.setData(const ClipboardData(text: ''));
-    Clipboard.setData(ClipboardData(text: shareText));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enlace copiado al portapapeles')),
-    );
+  Future<void> _shareTripDetails(BuildContext context) async {
+    try {
+      final resp = await CloudFunctionsService.instance.callMap('enableShareCallable', { 'tripId': trip.id });
+      final token = (resp['shareToken'] as String?) ?? '';
+      final link = token.isNotEmpty
+          ? 'https://us-central1-taxipro-chofer.cloudfunctions.net/getShareStatus?token=$token'
+          : 'https://track.taxipro.app/trip/${trip.id}';
+      final msg = 'Sigue mi viaje de TaxiPro en tiempo real:\n$link\n\n'
+          'Conductor: ${trip.driver?.name ?? 'Cargando...'}\n'
+          'Vehículo: ${trip.driver?.carModel ?? ''} - ${trip.driver?.licensePlate ?? ''}';
+      final encoded = Uri.encodeComponent(msg);
+      final uri = Uri.parse('whatsapp://send?text=$encoded');
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        final http = Uri.parse('https://wa.me/?text=$encoded');
+        await launchUrl(http, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {
+      // Fallback: copiar al portapapeles
+      final fallback = 'Sigue mi viaje de TaxiPro en tiempo real:\nhttps://track.taxipro.app/trip/${trip.id}';
+      Clipboard.setData(ClipboardData(text: fallback));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo abrir WhatsApp. Enlace copiado.')),
+        );
+      }
+    }
   }
 
   
@@ -135,8 +149,8 @@ import 'package:flutter/material.dart';
                 ),
                 Column(
                   children: [
-                    Icon(Icons.star, color: const Color(0xFFC0C0C0)),
-                    Text(trip.driver?.rating.toStringAsFixed(1) ?? '-'),
+                    Icon(Icons.star, color: AppColors.silver),
+                    Text(trip.driver != null ? trip.driver!.rating.toStringAsFixed(1) : '-'),
                   ],
                 )
               ],
