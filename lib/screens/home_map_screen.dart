@@ -81,6 +81,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[HOME_MAP] initState start');
     _markers = {
       const Marker(
         markerId: MarkerId('default'),
@@ -89,6 +90,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
       ),
     };
     _checkAndRequestLocationPermission();
+    debugPrint('[HOME_MAP] initState end');
   }
 
   // --- INICIO FUNCIONES DE PERMISO Y UBICACIÓN ---
@@ -424,10 +426,12 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
 
       // Cotizar tarifa sin crear viaje y mostrar pantalla de confirmación
       try {
+        print('[CALLABLE] quoteFare started');
         final quote = await CloudFunctionsService.instance.quoteFare(
           estimatedDistanceKm: dir.distanceKm,
           estimatedDurationMin: dir.durationMin,
         );
+        print('[CALLABLE] quoteFare finished');
         final total = (quote['totalFare'] as num?)?.toDouble() ?? 0.0;
         final currency = (quote['currency'] as String?) ?? 'MXN';
         if (mounted) setState(() => _isLoading = false);

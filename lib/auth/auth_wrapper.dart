@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:taxipro_usuariox/screens/home_map_screen.dart';
 import 'package:taxipro_usuariox/screens/login_screen.dart';
 import 'package:taxipro_usuariox/services/functions_service.dart';
+import 'package:taxipro_usuariox/services/app_config_service.dart';
 import 'package:taxipro_usuariox/screens/animated_splash_screen.dart';
+import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxipro_usuariox/widgets/legal_consent_modal.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -26,8 +28,33 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
-    // Refrescar sesión en segundo plano, sin bloquear la UI
+    // ⚡️ OPTIMIZACIÓN: Solo refrescar sesión, SIN ejecutar Cloud Functions
     _ensureFirebaseInitialized().timeout(const Duration(seconds: 8), onTimeout: () {});
+    
+    // ❌ ELIMINADO: No más llamadas automáticas a Cloud Functions en init
+    // Las funciones se ejecutarán bajo demanda cuando el usuario las necesite
+  }
+
+  // 🔧 MÉTODO MANUAL para inicializar backend cuando se necesite
+  Future<void> initializeBackendServicesOnDemand() async {
+    try {
+      print('[CALLABLE] getPassengerAppConfigCallable started');
+      developer.log('[TEST_BACKEND] calling getPassengerAppConfigCallable', name: 'TaxiProUsuarioX');
+      
+      final result = await CloudFunctionsService.instance
+          .callPublic('getPassengerAppConfigCallable', {})
+          .timeout(const Duration(seconds: 6));
+      
+      print('[CALLABLE] getPassengerAppConfigCallable finished');
+      developer.log('[TEST_BACKEND_OK] ${result.toString().length > 100 ? result.toString().substring(0, 100) + '...' : result}', name: 'TaxiProUsuarioX');
+      
+      await AppConfigService.instance.initialize();
+      developer.log('✅ Backend conectado exitosamente', name: 'TaxiPro');
+    } catch (e) {
+      print('[CALLABLE] getPassengerAppConfigCallable error: $e');
+      developer.log('[TEST_BACKEND_ERROR] $e', name: 'TaxiProUsuarioX');
+      developer.log('🔴 ERROR CRÍTICO - Backend no conecta: $e', name: 'TaxiPro');
+    }
   }
 
   @override
@@ -120,85 +147,35 @@ class _LaunchDeciderState extends State<_LaunchDecider> {
   }
 
   Future<void> _decide() async {
+    debugPrint('[AUTH_WRAPPER] _decide start');
     final user = FirebaseAuth.instance.currentUser;
+    
     if (user == null) {
+      debugPrint('[AUTH_WRAPPER] No user, going to LoginScreen');
       if (!mounted) return;
       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
       return;
     }
-    try {
-      final uid = user.uid;
-      // Obtener últimos viajes del usuario y decidir según status
-      final qs = await FirebaseFirestore.instance
-          .collection('trips')
-          .where('passengerId', isEqualTo: uid)
-          .orderBy('createdAt', descending: true)
-          .limit(20)
-          .get()
-          .timeout(const Duration(seconds: 4));
-
-      Map<String, dynamic>? chosen;
-      String chosenStatus = '';
-      for (final d in qs.docs) {
-        final data = d.data();
-        final status = (data['status'] as String?) ?? '';
-        if (status == 'active') { chosen = {'id': d.id, ...data}; chosenStatus = status; break; }
-        if (status == 'assigned' && chosen == null) { chosen = {'id': d.id, ...data}; chosenStatus = status; }
-        if (status == 'pending' && chosen == null) { chosen = {'id': d.id, ...data}; chosenStatus = status; }
-      }
-
-      if (!mounted) return;
-      if (chosen == null) {
-        Navigator.of(context).pushReplacement(_fadeTo(const SelectDestinationScreen()));
-        return;
-      }
-
-      final id = chosen['id'] as String;
-      LatLng? _getLatLngFrom(dynamic raw) {
-        if (raw is! Map) return null;
-        final m = raw.map((k, v) => MapEntry(k.toString(), v));
-        double? lat;
-        double? lng;
-        if (m['point'] is Map) {
-          final p = (m['point'] as Map).map((k, v) => MapEntry(k.toString(), v));
-          lat = (p['lat'] as num?)?.toDouble();
-          lng = (p['lng'] as num?)?.toDouble();
-        }
-        lat ??= (m['lat'] as num?)?.toDouble() ?? (m['latitude'] as num?)?.toDouble();
-        lng ??= (m['lng'] as num?)?.toDouble() ?? (m['longitude'] as num?)?.toDouble();
-        if (lat == null || lng == null) return null;
-        return LatLng(lat, lng);
-      }
-
-      if (chosenStatus == 'active') {
-        Navigator.of(context).pushReplacement(_fadeTo(TripSafetyScreen(tripId: id)));
-        return;
-      }
-
-      // assigned o pending → pantalla de chofer/espera
-      final origin = _getLatLngFrom(chosen['origin']);
-      final dest = _getLatLngFrom(chosen['destination']);
-      if (origin != null && dest != null) {
-        Navigator.of(context).pushReplacement(_fadeTo(DriverAssignedScreen(tripId: id, origin: origin, destination: dest)));
-      } else {
-        Navigator.of(context).pushReplacement(
-          _fadeTo(DriverAssignedScreen(
-            tripId: id,
-            origin: const LatLng(22.1565, -100.9855),
-            destination: const LatLng(22.1565, -100.9855),
-          )),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(_fadeTo(const SelectDestinationScreen()));
-    }
+    
+    // ⚡️ ULTRA-RÁPIDO: Ir directo al HomeMapScreen
+    // La lógica de viajes se hará después, dentro del mapa
+    debugPrint('[AUTH_WRAPPER] User found, going directly to HomeMapScreen');
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      _fadeTo(HomeMapScreen()),
+    );
+    
+    // ✅ LISTO: Sin consultas a Firestore, sin calls pesadas
   }
 
   @override
   Widget build(BuildContext context) {
-    // Mostrar inmediatamente la pantalla por defecto mientras decidimos (evita flicker de spinner)
-    return const SelectDestinationScreen();
+    // Mostrar loader simple mientras decidimos
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
   }
 }
 

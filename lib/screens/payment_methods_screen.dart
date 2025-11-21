@@ -44,6 +44,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   String? _error;
   List<PaymentCard> _paymentMethods = [];
   String? _defaultPaymentMethodId;
+  
+  // 🚀 CACHE LOCAL para métodos de pago
+  static final Map<String, List<PaymentCard>> _paymentMethodsCache = {};
+  static DateTime? _lastCacheTime;
 
   @override
   void initState() {
@@ -54,34 +58,60 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   Future<void> _loadPaymentMethods() async {
     developer.log('🔵 [Wallet] Iniciando _loadPaymentMethods...', name: 'PaymentMethodsScreen');
     if (!mounted) return;
+    
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) throw Exception('Usuario no autenticado para cargar métodos de pago.');
+
+    // ⚡️ CACHE CHECK: Si tenemos datos frescos (menos de 1 min), usar cache
+    final now = DateTime.now();
+    if (_paymentMethodsCache.containsKey(uid) && 
+        _lastCacheTime != null && 
+        now.difference(_lastCacheTime!).inMinutes < 1) {
+      developer.log('🚀 [Wallet] CACHE HIT: Usando datos cached', name: 'PaymentMethodsScreen');
+      setState(() {
+        _paymentMethods = _paymentMethodsCache[uid]!;
+        _isLoading = false;
+        _error = null;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) throw Exception('Usuario no autenticado para cargar métodos de pago.');
-
+      print('[CALLABLE] listPassengerPaymentMethodsCallable started');
       developer.log('🔵 [Wallet] Obteniendo token de usuario...', name: 'PaymentMethodsScreen');
       await FirebaseAuth.instance.currentUser!.getIdToken(true);
       developer.log('🔵 [Wallet] Llamando a listPassengerPaymentMethodsCallable...', name: 'PaymentMethodsScreen');
+      
       final result = await CloudFunctionsService.instance.callMap('listPassengerPaymentMethodsCallable', {'userId': uid});
+      
+      print('[CALLABLE] listPassengerPaymentMethodsCallable finished');
       final data = result;
       developer.log('🟢 [Wallet] Respuesta de listPassengerPaymentMethods: $result', name: 'PaymentMethodsScreen');
 
       final methods = (data['methods'] as List? ?? []).cast<dynamic>();
       final defaultPm = data['defaultPaymentMethodId'] as String?;
+      
+      final paymentCards = methods
+          .map((m) => PaymentCard.fromMap({
+                'id': m['id'] ?? '',
+                'brand': m['brand'] ?? 'card',
+                'last4': m['last4'] ?? '****',
+                'isDefault': defaultPm != null && defaultPm == (m['id'] ?? ''),
+              }))
+          .toList();
+      
+      // 💾 GUARDAR EN CACHE
+      _paymentMethodsCache[uid] = paymentCards;
+      _lastCacheTime = DateTime.now();
+      
       if (!mounted) return;
       setState(() {
-        _paymentMethods = methods
-            .map((m) => PaymentCard.fromMap({
-                  'id': m['id'] ?? '',
-                  'brand': m['brand'] ?? 'card',
-                  'last4': m['last4'] ?? '****',
-                  'isDefault': defaultPm != null && defaultPm == (m['id'] ?? ''),
-                }))
-            .toList();
+        _paymentMethods = paymentCards;
         _defaultPaymentMethodId = defaultPm;
         _isLoading = false;
       });

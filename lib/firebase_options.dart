@@ -48,7 +48,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDVnpGERWs82_o__51-BwK7YiFld9e7tXQ',
-    appId: '1:569260142078:android:d177be5f087345e9fba4af',
+    appId: '1:569260142078:android:1c847f5d602da765fba4af',
     messagingSenderId: '569260142078',
     projectId: 'taxipro-chofer',
     storageBucket: 'taxipro-chofer.firebasestorage.app',

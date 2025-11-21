@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TaxiPro UsuarioX</string>
+    <string name="facebook_app_id">COLOCAR_AQUÍ_EL_APP_ID_DE_FACEBOOK</string>
+    <string name="facebook_client_token">COLOCAR_AQUÍ_EL_CLIENT_TOKEN_DE_FACEBOOK</string>
+    <string name="facebook_login_protocol_scheme">fbCOLOCAR_AQUÍ_EL_APP_ID_DE_FACEBOOK</string>
+</resources>

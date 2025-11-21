@@ -1,20 +1,60 @@
 {
   "project_info": {
-    "project_number": "134468439876",
-    "project_id": "taxipro-usuariox-f177b",
-    "storage_bucket": "taxipro-usuariox-f177b.firebasestorage.app"
+    "project_number": "569260142078",
+    "project_id": "taxipro-chofer",
+    "storage_bucket": "taxipro-chofer.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:134468439876:android:2f380a71c85102cc82d111",
+        "mobilesdk_app_id": "1:569260142078:android:97d361aef35cfe9efba4af",
+        "android_client_info": {
+          "package_name": "com.taxipro.chofer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "569260142078-qrrojeo4tcasj6nfvb9o7srehup9rld8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taxipro.chofer",
+            "certificate_hash": "d1e38f81f3ca0c9efe4aa5e8a66ccc0794469c6c"
+          }
+        },
+        {
+          "client_id": "569260142078-3g1gk2hrlv3s4nge2bkgs426t5tggjal.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVnpGERWs82_o__51-BwK7YiFld9e7tXQ"
+        },
+        {
+          "current_key": "AIzaSyAkyEYguDShhqqvTMm7J24vvmpDvgln_7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "569260142078-3g1gk2hrlv3s4nge2bkgs426t5tggjal.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:569260142078:android:1c847f5d602da765fba4af",
         "android_client_info": {
           "package_name": "com.taxipro.usuariox"
         }
       },
       "oauth_client": [
         {
-          "client_id": "134468439876-u05klq7sj788idadaj66ofgjhnerhb81.apps.googleusercontent.com",
+          "client_id": "569260142078-16pu7p8ejetedvqbc9efppalcbakg1ee.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.taxipro.usuariox",
@@ -22,20 +62,31 @@
           }
         },
         {
-          "client_id": "134468439876-fv4c4fd205hg6761lc3vkk555em80kti.apps.googleusercontent.com",
+          "client_id": "569260142078-hfj5psqi4ejn5u7ttoim38odkcohfvtj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taxipro.usuariox",
+            "certificate_hash": "6b7b27f102ad58ab19ab576086dcfe2c358c5abf"
+          }
+        },
+        {
+          "client_id": "569260142078-3g1gk2hrlv3s4nge2bkgs426t5tggjal.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCeVFSVGIlrQVs3kR3LTgjEWMh28YyZX84"
+          "current_key": "AIzaSyDVnpGERWs82_o__51-BwK7YiFld9e7tXQ"
+        },
+        {
+          "current_key": "AIzaSyAkyEYguDShhqqvTMm7J24vvmpDvgln_7s"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "134468439876-fv4c4fd205hg6761lc3vkk555em80kti.apps.googleusercontent.com",
+              "client_id": "569260142078-3g1gk2hrlv3s4nge2bkgs426t5tggjal.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

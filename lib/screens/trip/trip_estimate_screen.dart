@@ -61,16 +61,19 @@ class _TripEstimateScreenState extends State<TripEstimateScreen> {
       // Calcular tarifa estimada si el backend lo devuelve vía quote
       if (widget.initialFare == null) {
         try {
+          print('[CALLABLE] quoteFare started');
           final resp = await CloudFunctionsService.instance.quoteFare(
             estimatedDistanceKm: widget.distanceKm,
             estimatedDurationMin: widget.durationMin,
           );
+          print('[CALLABLE] quoteFare finished');
           if (!mounted) return;
           setState(() {
             _estimatedFare = (resp['totalFare'] as num?)?.toDouble();
             _currency = (resp['currency'] as String?) ?? 'MXN';
           });
-        } catch (_) {
+        } catch (e) {
+          print('[CALLABLE] quoteFare error: $e');
           // Silencioso: usar cálculo previo si no hay quote
         }
       }
@@ -105,6 +108,7 @@ class _TripEstimateScreenState extends State<TripEstimateScreen> {
       );
     });
     try {
+      print('[CALLABLE] requestTrip started');
       final resp = await CloudFunctionsService.instance
           .requestTrip(
         originLat: widget.origin.latitude,
@@ -117,6 +121,8 @@ class _TripEstimateScreenState extends State<TripEstimateScreen> {
         estimatedDurationMin: widget.durationMin,
       )
           .timeout(const Duration(seconds: 12));
+      
+      print('[CALLABLE] requestTrip finished');
 
       String tripId = '';
       final anyId = resp['tripId'] ?? resp['id'] ?? (resp['trip'] is Map ? resp['trip']['id'] : null);

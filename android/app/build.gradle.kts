@@ -33,7 +33,7 @@ android {
 
     defaultConfig {
         applicationId = "com.taxipro.usuariox"
-        minSdk = flutter.minSdkVersion
+        minSdk = flutter.minSdkVersion  // Facebook Auth requirement
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"

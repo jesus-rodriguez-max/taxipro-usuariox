@@ -18,11 +18,23 @@ class DirectionsResult {
 }
 
 class DirectionsService {
+  // 🚀 CACHE LOCAL para rutas
+  static final Map<String, DirectionsResult> _routeCache = {};
+  
   Future<DirectionsResult?> getRoute({
     required LatLng origin,
     required LatLng destination,
   }) async {
+    final cacheKey = '${origin.latitude.toStringAsFixed(4)},${origin.longitude.toStringAsFixed(4)}|${destination.latitude.toStringAsFixed(4)},${destination.longitude.toStringAsFixed(4)}';
+    
+    // ⚡️ CACHE CHECK
+    if (_routeCache.containsKey(cacheKey)) {
+      print('[CACHE HIT] directionsRoute: $cacheKey');
+      return _routeCache[cacheKey];
+    }
+    
     try {
+      print('[CALLABLE] directionsRouteCallable started');
       final resp = await CloudFunctionsService.instance.callPublic(
         'directionsRouteCallable',
         {
@@ -32,6 +44,7 @@ class DirectionsService {
           'language': 'es',
         },
       );
+      print('[CALLABLE] directionsRouteCallable finished');
       if (resp['ok'] != true) return null;
       final polyline = resp['polyline'] as String?;
       if (polyline == null || polyline.isEmpty) return null;
@@ -40,13 +53,18 @@ class DirectionsService {
       final durationMin = (resp['durationMin'] as num?)?.toInt() ?? 0;
       final startAddress = resp['startAddress'] as String? ?? '';
       final endAddress = resp['endAddress'] as String? ?? '';
-      return DirectionsResult(
+      
+      final result = DirectionsResult(
         polylinePoints: pts,
         distanceKm: distanceKm,
         durationMin: durationMin,
         startAddress: startAddress,
         endAddress: endAddress,
       );
+      
+      // 💾 GUARDAR EN CACHE
+      _routeCache[cacheKey] = result;
+      return result;
     } catch (_) {
       return null;
     }

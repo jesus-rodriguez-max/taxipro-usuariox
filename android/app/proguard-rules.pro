@@ -21,3 +21,11 @@
 # Google Play Core rules
 -keep class com.google.android.play.core.** { *; }
 -dontwarn com.google.android.play.core.**
+
+# Google Sign-In rules
+-keep class com.google.android.gms.auth.** { *; }
+-keep class com.google.android.gms.signin.** { *; }
+-keep class com.google.android.gms.common.** { *; }
+-dontwarn com.google.android.gms.**
+-keep class com.google.firebase.auth.** { *; }
+-dontwarn com.google.firebase.auth.**

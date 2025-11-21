@@ -92,11 +92,12 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
         });
 
       // Llamar a Cloud Function
-      final callable = FirebaseFunctions.instance.httpsCallable('sendSupportMessageCallable');
+      final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+      final callable = functions.httpsCallable('sendSupportMessageCallable');
       await callable.call({
         'ticketId': ticketRef.id,
         'message': message,
-      });
+      }).timeout(const Duration(seconds: 6));
 
       // Retornar éxito
       Navigator.pop(context, {'success': true});

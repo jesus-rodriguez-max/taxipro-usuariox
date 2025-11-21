@@ -16,7 +16,7 @@ class AuthController {
     if (user == null) throw Exception("No se pudo crear el usuario.");
 
     // Crear documento en Firestore
-    await _db.collection('users').doc(user.uid).set({
+    await _db.collection('passengers').doc(user.uid).set({
       'uid': user.uid,
       'email': email.trim(),
       'displayName': displayName.trim(),

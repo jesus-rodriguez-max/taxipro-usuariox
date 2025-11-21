@@ -105,28 +105,40 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       final user = userCredential.user;
       if (user == null) return; // Salir si el usuario es nulo
 
-      // Crear documento de usuario en Firestore
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      // 🧪 TEST: Solo Authentication - Firestore comentado
+      print('✅ AUTHENTICATION EXITOSO!');
+      print('✅ UID: ${user.uid}');
+      print('✅ Email: ${user.email}');
+      print('🎯 Authentication funciona - el problema NO está aquí');
+      
+      /* FIRESTORE COMENTADO PARA TEST
+      await FirebaseFirestore.instance.collection('passengers').doc(user.uid).set({
         'uid': user.uid,
         'name': _nameCtrl.text.trim(),
         'email': user.email,
         'createdAt': FieldValue.serverTimestamp(),
         'termsAccepted': true, // Ya aceptó en el registro
       });
+      */
 
       // Actualizar el perfil con el nombre del usuario
       await user.updateDisplayName(_nameCtrl.text.trim());
       
-      // Enviar correo de verificación
-      await user.sendEmailVerification();
+      // 🧪 TEST: Omitir verificación de email por ahora
+      // await user.sendEmailVerification();
 
       scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Cuenta creada exitosamente. Se ha enviado un correo de verificación.')),
+        const SnackBar(content: Text('🧪 TEST: Authentication exitoso - Sin Firestore'), duration: Duration(seconds: 5)),
       );
 
       // Volver a la pantalla de login
       navigator.pop();
     } on FirebaseAuthException catch (e) {
+      print('🔴 FirebaseAuthException:');
+      print('🔴 Código: ${e.code}');
+      print('🔴 Mensaje: ${e.message}');
+      print('🔴 Stack: ${e.stackTrace}');
+      
       String message = 'Error al registrar usuario';
       if (e.code == 'weak-password') {
         message = 'La contraseña es demasiado débil';
@@ -134,10 +146,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         message = 'Ya existe una cuenta con este correo electrónico';
       } else if (e.code == 'invalid-email') {
         message = 'El correo electrónico no es válido';
+      } else {
+        // 🔍 MOSTRAR ERROR ESPECÍFICO PARA DEBUGGING
+        message = '🔴 Firebase Error: ${e.code} - ${e.message}';
       }
       
       scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text(message), duration: Duration(seconds: 10)),
       );
     } catch (e) {
       scaffoldMessenger.showSnackBar(

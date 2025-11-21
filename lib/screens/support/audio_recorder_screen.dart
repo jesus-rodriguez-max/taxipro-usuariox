@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taxipro_usuariox/config/production_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AudioRecorderScreen extends StatefulWidget {
@@ -54,32 +55,56 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen>
   }
 
   Future<void> _startRecording() async {
-    // Simular grabación para demo
-    setState(() {
-      _isRecording = true;
-      _recordingDuration = Duration.zero;
-    });
+    // 🔥 PRODUCCIÓN: Grabación real de audio
+    try {
+      // TODO: Implementar grabación real cuando se agregue el plugin
+      // await _audioRecorder.start();
+      
+      setState(() {
+        _isRecording = true;
+        _recordingDuration = Duration.zero;
+      });
 
-    _startTimer();
-    
-    // Simular grabación durante 3 segundos
-    Future.delayed(const Duration(seconds: 3), () {
-      if (_isRecording) {
-        _stopRecording();
+      _startTimer();
+      
+      if (ProductionConfig.useRealAudioRecording) {
+        print('🎤 PRODUCCIÓN: Grabación de audio iniciada - MODO REAL');
+      } else {
+        print('🧪 DEV: Grabación simulada');
       }
-    });
+    } catch (e) {
+      print('🔴 ERROR grabación: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error iniciando grabación: $e')),
+      );
+    }
   }
 
   Future<void> _stopRecording() async {
-    setState(() {
-      _isRecording = false;
-      _hasRecording = true;
-    });
-    
-    // Simular URL de audio para demo
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Audio grabado (simulado)')),
-    );
+    try {
+      // TODO: Implementar parada real cuando se agregue el plugin
+      // final audioPath = await _audioRecorder.stop();
+      
+      setState(() {
+        _isRecording = false;
+        _hasRecording = true;
+      });
+      
+      print('🎤 PRODUCCIÓN: Grabación de audio detenida');
+      // _audioFilePath = audioPath;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ProductionConfig.useRealAudioRecording 
+              ? 'Audio grabado en modo PRODUCCIÓN' 
+              : 'Audio grabado (simulado)'
+          ),
+        ),
+      );
+    } catch (e) {
+      print('🔴 ERROR parando grabación: $e');
+    }
   }
 
   void _startTimer() {

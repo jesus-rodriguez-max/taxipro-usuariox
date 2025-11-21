@@ -177,13 +177,17 @@ class _SelectDestinationScreenState extends State<SelectDestinationScreen> {
       double? initialFare;
       String? initialCurrency;
       try {
+        print('[CALLABLE] quoteFare started');
         final quote = await CloudFunctionsService.instance.quoteFare(
           estimatedDistanceKm: dir.distanceKm,
           estimatedDurationMin: dir.durationMin,
         );
+        print('[CALLABLE] quoteFare finished');
         initialFare = (quote['totalFare'] as num?)?.toDouble();
         initialCurrency = (quote['currency'] as String?) ?? 'MXN';
-      } catch (_) {}
+      } catch (e) {
+        print('[CALLABLE] quoteFare error: $e');
+      }
 
       final result = await Navigator.of(context).push(PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 220),

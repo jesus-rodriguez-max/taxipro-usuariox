@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:taxipro_usuariox/services/functions_service.dart';
 
 // Esta clase encapsula toda la lógica relacionada con los pagos.
 class PaymentService {
@@ -97,19 +98,18 @@ class PaymentService {
   // DEBES REEMPLAZARLA con tu lógica de backend real.
   Future<String> _getPaymentIntentClientSecretFromBackend(int amount, String currency, String customerId) async {
     // Esto sería una llamada HTTP a tu servidor.
-    // final response = await http.post(
-    //   Uri.parse('https://api.tu-dominio.com/create-payment-intent'),
-    //   body: json.encode({
-    //     'amount': amount,
-    //     'currency': currency,
-    //     'customerId': customerId,
-    //   }),
-    // );
-    // final data = json.decode(response.body);
-    // return data['clientSecret'];
-    
-    // Devolver un secret falso para la demostración. El real empieza con 'pi_'.
-    // Usar uno falso causará un error, lo cual es intencional para forzar la implementación.
-    return 'pi_12345_secret_67890_fake';
+    // 🔥 PRODUCCIÓN: Usar CloudFunctions real para Stripe
+    try {
+      print('[CALLABLE] createPaymentIntent started');
+      final result = await CloudFunctionsService.instance.createPaymentIntent(
+        tripId: customerId, // Usamos customerId como tripId temporalmente
+      );
+      print('[CALLABLE] createPaymentIntent finished');
+      return result; // Devuelve el clientSecret real de Stripe
+    } catch (e) {
+      print('[CALLABLE] createPaymentIntent error: $e');
+      print('🔴 ERROR PaymentService: $e');
+      throw Exception('Error creando PaymentIntent: $e');
+    }
   }
 }

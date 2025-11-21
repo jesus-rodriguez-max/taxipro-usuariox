@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:taxipro_usuariox/screens/splash_screen.dart';
 import 'package:taxipro_usuariox/screens/login_screen.dart';
@@ -13,10 +14,12 @@ import 'package:taxipro_usuariox/auth/auth_wrapper.dart';
 import 'firebase_options.dart';
 import 'package:taxipro_usuariox/theme.dart';
 import 'package:taxipro_usuariox/services/app_config_service.dart';
+import 'package:taxipro_usuariox/config/production_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taxipro_usuariox/widgets/terms_and_conditions_modal.dart';
 import 'package:flutter_stripe/flutter_stripe.dart' as stripe;
 import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:taxipro_usuariox/screens/trip/select_destination_screen.dart';
@@ -39,6 +42,12 @@ import 'package:taxipro_usuariox/screens/offline/offline_sent_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 🔥 MOSTRAR CONFIGURACIÓN DE PRODUCCIÓN
+  print('🚀 TAXIPRO USUARIOX - ${AppConfig.configMessage}');
+  print('🎯 Stripe Real: ${ProductionConfig.useRealStripe}');
+  print('🎤 Audio Real: ${ProductionConfig.useRealAudioRecording}');
+  print('🛡️ Shield Real: ${ProductionConfig.enableBackgroundRecording}');
 
   FlutterError.onError = (details) {
     developer.log(
@@ -62,15 +71,20 @@ Future<void> main() async {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      developer.log('🟢 Firebase inicializado (main)', name: 'TaxiPro');
+
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.playIntegrity,
+      );
+      
+      developer.log('[FIREBASE_INIT_OK] Firebase inicializado correctamente', name: 'TaxiProUsuarioX');
     } else {
       developer.log('🟢 Firebase ya estaba inicializado (main).', name: 'TaxiPro');
       Firebase.app();
     }
   } catch (e, stack) {
     developer.log(
-      '❌ Error inicializando Firebase en main: $e',
-      name: 'TaxiPro',
+      '[FIREBASE_INIT_ERROR] $e',
+      name: 'TaxiProUsuarioX',
       error: e,
       stackTrace: stack,
       level: 1000,
@@ -80,8 +94,15 @@ Future<void> main() async {
   try {
     print("🚀 runApp() se ejecuta AHORA. El splash animado debería aparecer.");
     // Iniciar cargas en background para no bloquear el splash nativo
-    () async { try { await dotenv.load(fileName: ".env"); } catch (_) {} }();
-    () async { try { await AppConfigService.instance.initialize(); } catch (_) {} }();
+    () async { 
+      try { 
+        await dotenv.load(fileName: ".env"); 
+        developer.log('✅ .env cargado correctamente', name: 'TaxiPro');
+      } catch (e) { 
+        developer.log('🟡 .env no disponible: $e', name: 'TaxiPro');
+      } 
+    }();
+    // ⚠️ NO ejecutar Cloud Functions en main() - mover a postFrameCallback después de login
     // Lanzar la app inmediatamente
     runApp(const TaxiProApp());
   } catch (e, stack) {
@@ -217,19 +238,21 @@ class _AnimatedSplashScreenLoaderState
       await dotenv.load(fileName: ".env");
       developer.log("🧪 .env cargado en background.", name: 'TaxiPro');
       
-      // 2. Configurar Stripe desde .env
-      final stripeKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'];
-      if (stripeKey != null && stripeKey.isNotEmpty) {
-        stripe.Stripe.publishableKey = stripeKey;
-        stripe.Stripe.merchantIdentifier = 'taxipro.usuariox';
-        await stripe.Stripe.instance.applySettings();
-        developer.log('🟢 Stripe configurado desde .env (publishable key aplicada).', name: 'TaxiPro');
-      } else {
-        developer.log('🟠 Stripe no configurado: STRIPE_PUBLISHABLE_KEY ausente en .env.', name: 'TaxiPro');
+      // 2. ⚡️ OPTIMIZACIÓN: Configurar Stripe SOLO desde .env (sin backend)
+      try {
+        final stripeKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'];
+        if (stripeKey != null && stripeKey.isNotEmpty) {
+          stripe.Stripe.publishableKey = stripeKey;
+          stripe.Stripe.merchantIdentifier = 'taxipro.usuariox';
+          await stripe.Stripe.instance.applySettings();
+          developer.log('⚡️ Stripe configurado desde .env (FAST INIT)', name: 'TaxiPro');
+        } else {
+          developer.log('🔴 STRIPE_PUBLISHABLE_KEY no encontrado en .env', name: 'TaxiPro');
+        }
+      } catch (e) {
+        developer.log('🔴 Error configurando Stripe: $e', name: 'TaxiPro');
       }
       
-      // 3. Obtener configuración remota (Google API Key)
-      await AppConfigService.instance.initialize();
       // 3. Simular tiempo de splash
       await Future.delayed(const Duration(milliseconds: 1200));
 

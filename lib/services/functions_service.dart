@@ -40,9 +40,17 @@ class CloudFunctionsService {
     }
 
     try {
+      developer.log('[CALLING_FUNCTION] $name data=$data', name: 'FunctionsService');
       final callable = functions.httpsCallable(name);
-      final result = await callable.call(data).timeout(const Duration(seconds: 12));
+      final result = await callable.call(data).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () {
+          developer.log('[FUNCTION_TIMEOUT] $name', name: 'FunctionsService');
+          throw Exception('Function timeout: $name');
+        },
+      );
       final payload = result.data;
+      developer.log('[FUNCTION_RESPONSE] $name result=${payload.toString().length > 100 ? payload.toString().substring(0, 100) + '...' : payload}', name: 'FunctionsService');
       // Normalizar payload a Map<String, dynamic> de manera segura
       if (payload is Map<String, dynamic>) return payload;
       if (payload is Map) {
@@ -63,7 +71,13 @@ class CloudFunctionsService {
         try {
           developer.log('Reintentando con nombre alterno: $alt', name: 'CloudFunctionsService');
           final callable2 = functions.httpsCallable(alt);
-          final result2 = await callable2.call(data).timeout(const Duration(seconds: 12));
+          final result2 = await callable2.call(data).timeout(
+            const Duration(seconds: 6),
+            onTimeout: () {
+              developer.log('[FUNCTION_TIMEOUT] $alt', name: 'FunctionsService');
+              throw Exception('Function timeout: $alt');
+            },
+          );
           final payload2 = result2.data;
           if (payload2 is Map<String, dynamic>) return payload2;
           if (payload2 is Map) {
@@ -81,14 +95,16 @@ class CloudFunctionsService {
       }
       rethrow;
     } catch (e) {
-      developer.log('Unexpected Functions error: $e (name=$name)', name: 'CloudFunctionsService');
+      developer.log('[FUNCTION_ERROR] $name error=$e', name: 'FunctionsService');
       rethrow;
     }
   }
 
   /// Ejemplo: crear PaymentIntent (ajusta el nombre de la función si tu backend usa otro)
   Future<String> createPaymentIntent({required String tripId}) async {
+    print('[CALLABLE] createPaymentIntentCallable started');
     final resp = await _callFunction('createPaymentIntentCallable', {'tripId': tripId});
+    print('[CALLABLE] createPaymentIntentCallable finished');
     final clientSecret = resp['clientSecret'] as String?;
     if (clientSecret == null || clientSecret.isEmpty) {
       throw Exception('No se recibió clientSecret desde la Cloud Function.');

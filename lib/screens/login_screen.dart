@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
   import 'package:taxipro_usuariox/screens/register_screen.dart';
   import 'package:taxipro_usuariox/screens/privacy_policy_screen.dart';
   import 'package:taxipro_usuariox/screens/terms_and_conditions_screen.dart';
+  import 'package:taxipro_usuariox/services/functions_service.dart';
+  import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
   import 'package:flutter/gestures.dart';
+  import 'package:taxipro_usuariox/auth/auth_wrapper.dart';
 
 // Clase para pintar el logo de Google según especificaciones oficiales
 class GoogleLogoPainter extends CustomPainter {
@@ -143,11 +146,11 @@ class _LoginScreenState extends State<LoginScreen> {
       
       final user = userCredential.user;
       if (user != null) {
-        await _ensurePassengerProfile(user);
-        
         // Navegación directa después de login exitoso
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => AuthWrapper()),
+          );
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -163,64 +166,60 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    final sw = Stopwatch()..start();
+    debugPrint('[LOGIN] Google button pressed');
     setState(() => _isLoading = true);
+    
     try {
-      // Flujo de autenticación para google_sign_in v6.x
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final googleUser = await _googleSignIn.signIn();
+      debugPrint('[LOGIN] GoogleSignIn finished in ${sw.elapsedMilliseconds} ms');
+
       if (googleUser == null) {
-        // Usuario canceló
+        debugPrint('[LOGIN] GoogleSignIn cancelled');
         if (mounted) setState(() => _isLoading = false);
         return;
       }
-      
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final googleAuth = await googleUser.authentication;
+      debugPrint('[LOGIN] GoogleAuth token ready in ${sw.elapsedMilliseconds} ms');
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final authResult = await _auth.signInWithCredential(credential);
-      final user = authResult.user;
-      if (user == null) {
-        throw Exception('No se pudo obtener el usuario después de signInWithCredential');
-      }
+      await _auth.signInWithCredential(credential);
+      debugPrint('[LOGIN] FirebaseAuth signInWithCredential finished in ${sw.elapsedMilliseconds} ms');
 
-      // Crear/actualizar perfil en passengers/{uid}
-      await _ensurePassengerProfile(user);
-      
-      // NAVEGACIÓN CORRECTA (NAVEGAR AQUÍ MISMO):
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => AuthWrapper()),
+      );
+      debugPrint('[LOGIN] Navigation to AuthWrapper in ${sw.elapsedMilliseconds} ms');
     } catch (e, stackTrace) {
+      print('🔴 ERROR en Google SignIn: $e');
+      print('🔴 Stack trace: $stackTrace');
       debugPrint('Error en Google SignIn: $e\n$stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al iniciar sesión con Google')),
+          SnackBar(
+            content: Text('Error Google Sign-In: $e'),
+            duration: Duration(seconds: 10),  // 10 segundos para leer bien
+            action: SnackBarAction(
+              label: 'CERRAR',
+              onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
+          ),
         );
       }
     } finally {
+      print('🟡 Finalizando Google Sign-In...');
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _ensurePassengerProfile(User user) async {
-    final docRef = FirebaseFirestore.instance.collection('passengers').doc(user.uid);
-    final doc = await docRef.get();
-    if (!doc.exists) {
-      await docRef.set({
-        'userId': user.uid,
-        'email': user.email,
-        'name': user.displayName,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } else {
-      await docRef.update({
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
-  }
+  // ❌ ELIMINADO: _ensurePassengerProfile - se movió a después del login
+  // El perfil se creará bajo demanda cuando se necesite
 
   void _forgotPassword() async {
     if (_emailCtrl.text.isEmpty) {
@@ -292,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: const Text(
                             '¿Olvidaste tu contraseña?',
                             textAlign: TextAlign.right,
-                          )
+                          ),
                         ),
                       ),
                     ],
@@ -354,7 +353,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: null, // Facebook login no implementado
+                    onPressed: _isLoading ? null : _signInWithFacebook, // ✅ API v6.x actualizada
                     icon: Container(
                       height: 24,
                       width: 24,
@@ -396,4 +395,84 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  /// 🔵 FACEBOOK SIGN-IN (API v6.x Compatible)
+  /// ✅ Actualizado: accessToken.tokenString → accessToken.token!
+  /// 📦 Package: flutter_facebook_auth ^6.2.0
+  Future<void> _signInWithFacebook() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    try {
+      print('🔵 Iniciando Facebook Sign-In...');
+      
+      // 1. Autenticar con Facebook
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['email', 'public_profile'],
+      );
+      
+      // 2. Verificar estado del login
+      if (result.status != LoginStatus.success) {
+        String errorMessage = 'Login cancelado o falló';
+        if (result.status == LoginStatus.cancelled) {
+          errorMessage = 'Login cancelado por el usuario';
+        } else if (result.status == LoginStatus.failed) {
+          errorMessage = 'Error de Facebook: ${result.message}';
+        }
+        throw Exception(errorMessage);
+      }
+
+      // 3. Verificar AccessToken
+      final AccessToken? accessToken = result.accessToken;
+      if (accessToken == null) {
+        throw Exception('No se pudo obtener AccessToken de Facebook');
+      }
+      
+      // 4. Obtener datos del usuario de Facebook (opcional para debug)
+      final userData = await FacebookAuth.instance.getUserData();
+      print('📊 Facebook user data: ${userData['name']} - ${userData['email']}');
+      
+      // 5. Crear credencial para Firebase
+      final OAuthCredential credential = FacebookAuthProvider.credential(accessToken.token!);
+      
+      // 6. Autenticar con Firebase
+      final UserCredential authResult = await _auth.signInWithCredential(credential);
+      final User? user = authResult.user;
+      
+      if (user == null) {
+        throw Exception('No se pudo obtener el usuario después de Facebook Sign-In');
+      }
+
+      print('✅ Facebook Sign-In exitoso: ${user.email}');
+      
+      // Navegación directa sin calls pesadas
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => AuthWrapper()),
+        );
+      }
+    } catch (e, stackTrace) {
+      print('🔴 ERROR en Facebook SignIn: $e');
+      print('🔴 Stack trace: $stackTrace');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error Facebook Sign-In: $e'),
+            duration: Duration(seconds: 10),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'CERRAR',
+              onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
+          ),
+        );
+      }
+    } finally {
+      print('🔵 Finalizando Facebook Sign-In...');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ❌ ELIMINADO: testBackendConnectionOnDemand - ya no se ejecuta en login
 }
