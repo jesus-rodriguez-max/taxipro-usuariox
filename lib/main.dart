@@ -32,6 +32,8 @@ import 'package:taxipro_usuariox/screens/settings/settings_screen.dart';
 // (sin imports de rutas de depuración)
 import 'package:taxipro_usuariox/screens/safety/safety_screen.dart';
 import 'package:taxipro_usuariox/screens/home_map_screen.dart';
+import 'package:taxipro_usuariox/pages/home_page.dart';
+
 import 'package:taxipro_usuariox/screens/profile_screen.dart';
 import 'package:taxipro_usuariox/screens/offline/offline_request_screen.dart';
 import 'package:taxipro_usuariox/screens/offline/offline_confirm_screen.dart';
@@ -105,7 +107,8 @@ class TaxiProApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
-      initialRoute: '/',
+      home: const HomePage(),
+      // initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
